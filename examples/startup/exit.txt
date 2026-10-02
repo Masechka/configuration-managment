@@ -1,0 +1,3 @@
+ls /before-exit
+exit
+ls /should-not-run
