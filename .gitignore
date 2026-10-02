@@ -1,0 +1,17 @@
+.gradle/
+.kotlin/
+.tools/
+.superpowers/
+build/
+out/
+.idea/
+.vscode/
+*.iml
+*.class
+*.jar
+*.zip
+*.tar
+*.gz
+*.pdf
+.DS_Store
+/docs/
