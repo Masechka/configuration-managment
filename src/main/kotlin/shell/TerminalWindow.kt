@@ -1,12 +1,13 @@
 package shell
 
+import java.io.IOException
 import javax.swing.JFrame
 import javax.swing.SwingUtilities
 import kotlin.concurrent.thread
 
 /** Окно графического эмулятора оболочки. Создаётся в потоке событий Swing. */
 class TerminalWindow(private val config: AppConfig = AppConfig()) {
-    private val shell = Shell()
+    private var shell = Shell()
     private val frame = JFrame("VFS Shell — ${config.vfsName}")
     private val panel = TerminalPanel(::submit)
 
@@ -15,7 +16,7 @@ class TerminalWindow(private val config: AppConfig = AppConfig()) {
         frame.contentPane = panel
         frame.setSize(WINDOW_WIDTH, WINDOW_HEIGHT)
         frame.setLocationByPlatform(true)
-        panel.append("Команды: ls, cd, exit. Для выполнения нажмите Enter.")
+        panel.append("Команды: ls, cd, vfs-init, exit. Для выполнения нажмите Enter.")
         panel.append(config.debugDescription())
     }
 
@@ -27,22 +28,47 @@ class TerminalWindow(private val config: AppConfig = AppConfig()) {
 
     /** Выполняет команду и закрывает окно при корректном exit. */
     private fun submit(line: String) {
-        val result = shell.execute(line)
-        panel.append(result.output)
-        if (result.exit) frame.dispose()
+        panel.input.isEnabled = false
+        thread(name = "shell-command", isDaemon = true) {
+            val result = shell.execute(line)
+            SwingUtilities.invokeLater {
+                panel.append(result.output)
+                if (result.exit) frame.dispose()
+                panel.input.isEnabled = true
+                panel.input.requestFocusInWindow()
+            }
+        }
     }
 
     /** Исполняет скрипт вне потока Swing, блокируя ввод до его окончания. */
     private fun startSession() {
         panel.input.isEnabled = false
         thread(name = "startup-script", isDaemon = true) {
-            config.startupPath?.let { path ->
-                StartupScript.run(path, ::executeStartup, ::display)
+            if (loadVfs()) {
+                config.startupPath?.let { path ->
+                    StartupScript.run(path, ::executeStartup, ::display)
+                }
             }
             SwingUtilities.invokeLater {
                 panel.input.isEnabled = true
                 panel.input.requestFocusInWindow()
             }
+        }
+    }
+
+    /** Загружает ZIP вне потока Swing; ошибку показывает в окне и терминале. */
+    private fun loadVfs(): Boolean {
+        return try {
+            val session = VfsSession.load(config)
+            shell = Shell(session::initialize)
+            display("Загружена ${config.vfsName}\n${session.fileSystem.describe()}")
+            true
+        } catch (error: IOException) {
+            display("Ошибка загрузки VFS: ${error.message}")
+            false
+        } catch (error: IllegalArgumentException) {
+            display("Ошибка загрузки VFS: ${error.message}")
+            false
         }
     }
 

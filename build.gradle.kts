@@ -25,8 +25,21 @@ application {
 
 tasks.test {
     useJUnit()
+    exclude("**/WindowIntegrationTest.class")
     jvmArgs("-Djava.awt.headless=true")
     testLogging {
         events("failed", "skipped")
     }
+}
+
+tasks.register<Test>("guiTest") {
+    description = "Проверяет реальное окно Swing; требуется графическая сессия."
+    group = "verification"
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    include("**/WindowIntegrationTest.class")
+    useJUnit()
+    jvmArgs("-Djava.awt.headless=false")
+    testLogging { events("failed", "skipped") }
+    mustRunAfter(tasks.test)
 }

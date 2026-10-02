@@ -1,7 +1,9 @@
 package shell
 
+import java.io.IOException
+
 /** Выполняет команды прототипа независимо от графического интерфейса. */
-class Shell {
+class Shell(private val initializeVfs: (() -> String)? = null) {
     /** Обрабатывает строку; ошибка команды не прекращает следующий ввод. */
     fun execute(line: String): CommandResult {
         val command = CommandParser.parse(line) ?: return CommandResult()
@@ -9,6 +11,7 @@ class Shell {
             "ls" -> stub(command)
             "cd" -> changeDirectoryStub(command)
             "exit" -> exit(command)
+            "vfs-init" -> initialize(command)
             else -> failure("Неизвестная команда: ${command.name}")
         }
     }
@@ -31,6 +34,19 @@ class Shell {
     private fun exit(command: Command): CommandResult {
         if (command.arguments.isNotEmpty()) return failure("exit: аргументы не поддерживаются")
         return CommandResult("Завершение работы.", exit = true)
+    }
+
+    /** Выполняет служебный сброс; ошибка записи не завершает приложение. */
+    private fun initialize(command: Command): CommandResult {
+        val action = initializeVfs ?: return failure("VFS не загружена: vfs-init недоступна")
+        if (command.arguments.isNotEmpty()) {
+            return failure("vfs-init: аргументы не поддерживаются")
+        }
+        return try {
+            CommandResult(action())
+        } catch (error: IOException) {
+            failure("vfs-init: ${error.message}")
+        }
     }
 
     /** Формирует единый формат сообщения об ошибке. */

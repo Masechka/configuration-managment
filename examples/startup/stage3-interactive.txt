@@ -1,0 +1,11 @@
+ls
+ls /home /tmp
+cd
+cd /home
+cd /home /tmp
+unknown
+exit extra
+vfs-init extra
+ls /after-errors
+vfs-init
+ls

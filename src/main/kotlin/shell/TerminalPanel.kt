@@ -29,6 +29,7 @@ class TerminalPanel(private val submit: (String) -> Unit) : JPanel(BorderLayout(
         add(JScrollPane(history), BorderLayout.CENTER)
         add(input, BorderLayout.SOUTH)
         input.addActionListener {
+            if (!input.isEnabled) return@addActionListener
             val line = input.text
             input.text = ""
             append("$ $line")

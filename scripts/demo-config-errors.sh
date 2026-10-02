@@ -2,7 +2,7 @@
 set -eu
 project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$project_dir"
-./scripts/gradle.sh --quiet installDist
+./scripts/prepare-examples.sh
 app=./build/install/vfs-shell/bin/vfs-shell
 expect_error() {
     if "$app" "$@"; then
