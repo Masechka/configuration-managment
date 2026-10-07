@@ -4,6 +4,14 @@ import java.io.IOException
 
 /** Выполняет команды прототипа независимо от графического интерфейса. */
 class Shell(private val initializeVfs: (() -> String)? = null) {
+    @Volatile
+    private var hadErrors = false
+
+    /** Запоминает ошибку загрузки или чтения в текущей сессии. */
+    fun recordError() {
+        hadErrors = true
+    }
+
     /** Обрабатывает строку; ошибка команды не прекращает следующий ввод. */
     fun execute(line: String): CommandResult {
         val command = CommandParser.parse(line) ?: return CommandResult()
@@ -33,7 +41,8 @@ class Shell(private val initializeVfs: (() -> String)? = null) {
     /** Завершает работу только при вызове exit без аргументов. */
     private fun exit(command: Command): CommandResult {
         if (command.arguments.isNotEmpty()) return failure("exit: аргументы не поддерживаются")
-        return CommandResult("Завершение работы.", exit = true)
+        val warning = if (hadErrors) "$EXIT_WARNING\n" else ""
+        return CommandResult("${warning}Завершение работы.", exit = true)
     }
 
     /** Выполняет служебный сброс; ошибка записи не завершает приложение. */
@@ -50,9 +59,14 @@ class Shell(private val initializeVfs: (() -> String)? = null) {
     }
 
     /** Формирует единый формат сообщения об ошибке. */
-    private fun failure(message: String) = CommandResult("Ошибка: $message", error = true)
+    private fun failure(message: String): CommandResult {
+        recordError()
+        return CommandResult("Ошибка: $message", error = true)
+    }
 
-    private companion object {
-        const val MAX_CD_ARGUMENTS = 1
+    companion object {
+        /** Предупреждение перед завершением сессии, в которой были ошибки. */
+        const val EXIT_WARNING = "Предупреждение: во время работы были ошибки."
+        private const val MAX_CD_ARGUMENTS = 1
     }
 }

@@ -78,6 +78,47 @@ class WindowIntegrationTest {
                 }
                 submit(frame, "exit")
                 waitUntil { !frame.isDisplayable }
+                SwingUtilities.invokeAndWait {
+                    val text = (frame.contentPane as TerminalPanel).history.text
+                    assertTrue(text.contains("Предупреждение: во время работы были ошибки."))
+                }
+            } finally {
+                SwingUtilities.invokeAndWait { frame.dispose() }
+            }
+        }
+    }
+
+    /** Предупреждение скрипта попадает в историю до закрытия окна. */
+    @Test
+    fun startupExitDisplaysWarningBeforeClosing() {
+        withArchive(emptyMap()) { path ->
+            val script = path.parent.resolve("startup.txt")
+            Files.writeString(script, "unknown\nls\nexit\nls /must-not-run\n")
+            val frame = openWindow(AppConfig(path, script, true))
+            waitUntil { !frame.isDisplayable }
+            SwingUtilities.invokeAndWait {
+                val text = (frame.contentPane as TerminalPanel).history.text
+                assertTrue(text.contains("Предупреждение: во время работы были ошибки."))
+                assertFalse(text.contains("/must-not-run"))
+            }
+        }
+    }
+
+    /** Ошибка чтения скрипта сохраняется до закрытия окна кнопкой. */
+    @Test
+    fun missingScriptWarnsOnWindowClose() {
+        withArchive(emptyMap()) { path ->
+            val frame = openWindow(AppConfig(path, path.parent.resolve("missing.txt"), true))
+            try {
+                waitForInput(frame)
+                SwingUtilities.invokeAndWait {
+                    frame.dispatchEvent(java.awt.event.WindowEvent(
+                        frame, java.awt.event.WindowEvent.WINDOW_CLOSING,
+                    ))
+                    val text = (frame.contentPane as TerminalPanel).history.text
+                    assertTrue(text.contains("Предупреждение: во время работы были ошибки."))
+                    assertFalse(frame.isDisplayable)
+                }
             } finally {
                 SwingUtilities.invokeAndWait { frame.dispose() }
             }

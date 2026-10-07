@@ -11,6 +11,7 @@ fun main(args: Array<String>) {
         AppConfig.parse(args)
     } catch (error: IllegalArgumentException) {
         System.err.println("Ошибка конфигурации: ${error.message}")
+        System.err.println(Shell.EXIT_WARNING)
         exitProcess(CONFIGURATION_ERROR)
     }
     println(config.debugDescription())

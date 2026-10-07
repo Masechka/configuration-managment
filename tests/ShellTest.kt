@@ -6,6 +6,27 @@ import kotlin.test.assertTrue
 
 /** Проверки команд первого этапа и обработки ошибок. */
 class ShellTest {
+    /** Ошибка сохраняется до exit даже после успешных команд. */
+    @Test
+    fun exitWarnsAboutEarlierErrors() {
+        val shell = Shell()
+        shell.execute("unknown")
+        shell.execute("ls")
+        val result = shell.execute("exit")
+        assertTrue(result.exit)
+        assertFalse(result.error)
+        assertTrue(result.output.contains("Предупреждение: во время работы были ошибки."))
+        assertTrue(result.output.indexOf("Предупреждение") < result.output.indexOf("Завершение"))
+    }
+
+    /** Чистая сессия завершается без предупреждения. */
+    @Test
+    fun cleanSessionExitsWithoutWarning() {
+        val shell = Shell()
+        shell.execute("ls")
+        assertFalse(shell.execute("exit").output.contains("Предупреждение"))
+    }
+
     /** Заглушка сохраняет несколько аргументов и не завершает диалог. */
     @Test
     fun lsDisplaysItsNameAndArguments() {

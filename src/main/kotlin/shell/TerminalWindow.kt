@@ -1,6 +1,8 @@
 package shell
 
 import java.io.IOException
+import java.awt.event.WindowAdapter
+import java.awt.event.WindowEvent
 import javax.swing.JFrame
 import javax.swing.SwingUtilities
 import kotlin.concurrent.thread
@@ -12,7 +14,15 @@ class TerminalWindow(private val config: AppConfig = AppConfig()) {
     private val panel = TerminalPanel(::submit)
 
     init {
-        frame.defaultCloseOperation = JFrame.DISPOSE_ON_CLOSE
+        frame.defaultCloseOperation = JFrame.DO_NOTHING_ON_CLOSE
+        frame.addWindowListener(object : WindowAdapter() {
+            override fun windowClosing(event: WindowEvent) {
+                val result = shell.execute("exit")
+                panel.append(result.output)
+                println(result.output)
+                frame.dispose()
+            }
+        })
         frame.contentPane = panel
         frame.setSize(WINDOW_WIDTH, WINDOW_HEIGHT)
         frame.setLocationByPlatform(true)
@@ -33,7 +43,10 @@ class TerminalWindow(private val config: AppConfig = AppConfig()) {
             val result = shell.execute(line)
             SwingUtilities.invokeLater {
                 panel.append(result.output)
-                if (result.exit) frame.dispose()
+                if (result.exit) {
+                    println(result.output)
+                    frame.dispose()
+                }
                 panel.input.isEnabled = true
                 panel.input.requestFocusInWindow()
             }
@@ -46,7 +59,9 @@ class TerminalWindow(private val config: AppConfig = AppConfig()) {
         thread(name = "startup-script", isDaemon = true) {
             if (loadVfs()) {
                 config.startupPath?.let { path ->
-                    StartupScript.run(path, ::executeStartup, ::display)
+                    StartupScript.run(path, shell::execute, ::display, shell::recordError) {
+                        SwingUtilities.invokeLater { frame.dispose() }
+                    }
                 }
             }
             SwingUtilities.invokeLater {
@@ -64,19 +79,14 @@ class TerminalWindow(private val config: AppConfig = AppConfig()) {
             display("Загружена ${config.vfsName}\n${session.fileSystem.describe()}")
             true
         } catch (error: IOException) {
+            shell.recordError()
             display("Ошибка загрузки VFS: ${error.message}")
             false
         } catch (error: IllegalArgumentException) {
+            shell.recordError()
             display("Ошибка загрузки VFS: ${error.message}")
             false
         }
-    }
-
-    /** Возвращает результат команды и планирует закрытие окна при exit. */
-    private fun executeStartup(line: String): CommandResult {
-        val result = shell.execute(line)
-        if (result.exit) SwingUtilities.invokeLater { frame.dispose() }
-        return result
     }
 
     /** Показывает вывод скрипта в окне и дублирует его в терминале запуска. */

@@ -11,6 +11,8 @@ object StartupScript {
         path: Path,
         execute: (String) -> CommandResult,
         display: (String) -> Unit,
+        onError: () -> Unit = {},
+        onExit: () -> Unit = {},
     ) {
         try {
             Files.newBufferedReader(path).use { reader ->
@@ -24,10 +26,14 @@ object StartupScript {
                         result.output
                     }
                     display(text)
-                    if (result.exit) return
+                    if (result.exit) {
+                        onExit()
+                        return
+                    }
                 }
             }
         } catch (error: IOException) {
+            onError()
             display("Ошибка чтения стартового скрипта '$path': ${error.message}")
         }
     }
