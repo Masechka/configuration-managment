@@ -7,7 +7,9 @@ class Shell(
     private val initializeVfs: (() -> String)? = null,
     private val session: VfsSession? = null,
 ) {
-    private val navigation = session?.navigation ?: VfsNavigation { VirtualFileSystem() }
+    private val navigation = session?.navigation ?: VirtualFileSystem().let { fileSystem ->
+        VfsNavigation { fileSystem }
+    }
 
     @Volatile
     private var hadErrors = false
@@ -33,6 +35,7 @@ class Shell(
         "cd" -> changeDirectory(command.arguments)
         "echo" -> CommandResult(command.arguments.joinToString(" "))
         "find" -> CommandResult(FindCommand(navigation).execute(command.arguments))
+        "chown" -> CommandResult(ChownCommand(navigation).execute(command.arguments))
         "exit" -> exit(command)
         "vfs-init" -> initialize(command)
         else -> failure("Неизвестная команда: ${command.name}")

@@ -126,6 +126,32 @@ class WindowIntegrationTest {
         }
     }
 
+    /** chown из окна меняет вывод ls -l, сохраняя исходные байты физического ZIP. */
+    @Test
+    fun ownershipChangesFromWindowRemainInMemory() {
+        withArchive(mapOf("home/file.txt" to "file".toByteArray())) { path ->
+            val before = Files.readAllBytes(path)
+            val frame = openWindow(AppConfig(path, explicitVfs = true))
+            try {
+                waitForInput(frame)
+                submit(frame, "cd /home")
+                waitForInput(frame)
+                submit(frame, "chown alice:team file.txt")
+                waitForInput(frame)
+                submit(frame, "ls -l")
+                waitForInput(frame)
+                SwingUtilities.invokeAndWait {
+                    val text = (frame.contentPane as TerminalPanel).history.text
+                    assertTrue(text.contains("$ ls -l\n- alice team 4 file.txt"))
+                    savePanelPreview(frame, "ownership")
+                }
+                kotlin.test.assertContentEquals(before, Files.readAllBytes(path))
+            } finally {
+                SwingUtilities.invokeAndWait { frame.dispose() }
+            }
+        }
+    }
+
     /** Находит созданное окно приложения в реальном окружении Swing. */
     private fun openWindow(config: AppConfig): JFrame {
         lateinit var frame: JFrame
@@ -162,14 +188,14 @@ class WindowIntegrationTest {
     }
 
     /** Сохраняет изображение компонентов самого приложения для проверки оформления. */
-    private fun savePanelPreview(frame: JFrame) {
+    private fun savePanelPreview(frame: JFrame, name: String = "terminal") {
         val panel = frame.contentPane
         val image = BufferedImage(panel.width, panel.height, BufferedImage.TYPE_INT_RGB)
         val graphics = image.createGraphics()
         panel.printAll(graphics)
         graphics.dispose()
         Files.createDirectories(Path.of("build/preview"))
-        ImageIO.write(image, "png", Path.of("build/preview/terminal.png").toFile())
+        ImageIO.write(image, "png", Path.of("build/preview/$name.png").toFile())
     }
 
     private companion object {

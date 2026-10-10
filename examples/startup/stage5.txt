@@ -1,0 +1,36 @@
+echo Этап 5: владельцы и группы VFS
+ls -al /
+chown alice /root.txt
+ls -l /root.txt
+chown bob:staff /home /empty
+ls -l /
+chown :team /root.txt
+ls -l /root.txt
+chown 1000:2000 /root.txt
+ls -l /root.txt
+chown student: /root.txt
+ls -l /root.txt
+cd /home/student
+chown carol profile.txt projects/readme.txt
+ls -l profile.txt projects/readme.txt
+chown -R teamlead:developers .
+ls -alR .
+cd /
+chown -R -- 3000:4000 /.hidden /empty
+ls -alR /.hidden /empty
+chown admin:wheel /
+ls -al /
+chown
+chown alice
+chown : /root.txt
+chown a:b:c /root.txt
+chown -x alice /root.txt
+chown alice /missing
+chown alice /root.txt /missing
+chown alice /root.txt/..
+chown alice /missing/../home
+chown bad/name /root.txt
+echo После ошибок метаданные сохраняются, выполнение продолжается
+ls -l /root.txt
+chown -R final:group /
+ls -alR /

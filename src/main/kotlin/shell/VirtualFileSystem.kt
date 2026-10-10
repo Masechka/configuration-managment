@@ -2,13 +2,14 @@ package shell
 
 import java.util.Base64
 
-/** Неизменяемое дерево VFS; содержимое файлов хранится в памяти в base64. */
+/** Дерево VFS с неизменяемым содержимым base64 и изменяемыми владельцами в памяти. */
 class VirtualFileSystem internal constructor(
     files: Map<String, String> = emptyMap(),
     directories: Set<String> = setOf("/"),
 ) {
     private val files = files.toMap()
     private val directories = directories.toSet()
+    private val ownership = mutableMapOf<String, VfsOwnership>()
 
     /** Количество файлов в загруженной VFS. */
     val fileCount: Int get() = files.size
@@ -48,6 +49,19 @@ class VirtualFileSystem internal constructor(
 
     /** Размер файла в исходных байтах; каталог имеет виртуальный размер 0. */
     fun size(path: String): Int = if (isDirectory(path)) 0 else read(path).size
+
+    /** Возвращает метаданные существующего элемента; начальный владелец — root:root. */
+    fun ownership(path: String): VfsOwnership {
+        require(contains(path)) { "Путь VFS не найден: $path" }
+        return ownership[path] ?: VfsOwnership()
+    }
+
+    /** Меняет только заданные поля метаданных существующего элемента в памяти. */
+    fun changeOwnership(path: String, owner: String?, group: String?) {
+        require(owner != null || group != null) { "Не задан владелец или группа" }
+        val previous = ownership(path)
+        ownership[path] = VfsOwnership(owner ?: previous.owner, group ?: previous.group)
+    }
 
     /** Диагностика загруженного дерева без распаковки на диск. */
     fun describe(): String {

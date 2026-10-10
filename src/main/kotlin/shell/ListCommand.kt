@@ -55,6 +55,7 @@ internal class ListCommand(private val navigation: VfsNavigation) {
     private fun format(path: String, name: String, options: CommandOptions): String {
         if ('l' !in options.flags) return name
         val type = if (fileSystem.isDirectory(path)) "d" else "-"
-        return "$type root root ${fileSystem.size(path)} $name"
+        val ownership = fileSystem.ownership(path)
+        return "$type ${ownership.owner} ${ownership.group} ${fileSystem.size(path)} $name"
     }
 }

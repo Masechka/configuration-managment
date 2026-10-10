@@ -8,7 +8,7 @@ class VfsSession private constructor(
     private val path: Path,
     fileSystem: VirtualFileSystem,
 ) {
-    /** Текущее дерево; изменяется только после успешной физической очистки. */
+    /** Выбранное дерево; заменяется только после успешной физической очистки. */
     var fileSystem: VirtualFileSystem = fileSystem
         private set
 

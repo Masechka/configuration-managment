@@ -26,7 +26,10 @@ class TerminalWindow(private val config: AppConfig = AppConfig()) {
         frame.contentPane = panel
         frame.setSize(WINDOW_WIDTH, WINDOW_HEIGHT)
         frame.setLocationByPlatform(true)
-        panel.append("Команды: ls, cd, echo, find, vfs-init, exit. Для выполнения нажмите Enter.")
+        panel.append(
+            "Команды: ls, cd, echo, find, chown, vfs-init, exit. " +
+                "Для выполнения нажмите Enter.",
+        )
         panel.append(config.debugDescription())
     }
 
