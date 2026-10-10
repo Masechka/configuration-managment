@@ -1,10 +1,11 @@
 package shell
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-/** Проверки команд первого этапа и обработки ошибок. */
+/** Проверки команд оболочки и обработки ошибок. */
 class ShellTest {
     /** Ошибка сохраняется до exit даже после успешных команд. */
     @Test
@@ -27,25 +28,22 @@ class ShellTest {
         assertFalse(shell.execute("exit").output.contains("Предупреждение"))
     }
 
-    /** Заглушка сохраняет несколько аргументов и не завершает диалог. */
+    /** ls реальной пустой VFS возвращает пустой список и ошибки для пропавших путей. */
     @Test
-    fun lsDisplaysItsNameAndArguments() {
-        val result = Shell().execute("ls /a /b")
-        assertTrue(result.output.contains("ls"))
-        assertTrue(result.output.contains("/a"))
-        assertTrue(result.output.contains("/b"))
-        assertFalse(result.error)
-        assertFalse(result.exit)
+    fun lsUsesTheVirtualRoot() {
+        val shell = Shell()
+        assertEquals("", shell.execute("ls").output)
+        assertTrue(shell.execute("ls /a /b").error)
+        assertFalse(shell.execute("ls").exit)
     }
 
-    /** cd без пути и с одним путём остаётся допустимой заглушкой. */
+    /** cd разрешает корень без аргументов, но не создаёт отсутствующие каталоги. */
     @Test
-    fun cdAcceptsZeroOrOneArgument() {
+    fun cdUsesExistingDirectories() {
         val shell = Shell()
         assertFalse(shell.execute("cd").error)
-        val result = shell.execute("cd /home")
-        assertTrue(result.output.contains("/home"))
-        assertFalse(result.error)
+        assertFalse(shell.execute("cd /").error)
+        assertTrue(shell.execute("cd /home").error)
     }
 
     /** Ошибочная команда не прерывает следующий ввод. */

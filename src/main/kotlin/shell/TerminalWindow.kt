@@ -26,7 +26,7 @@ class TerminalWindow(private val config: AppConfig = AppConfig()) {
         frame.contentPane = panel
         frame.setSize(WINDOW_WIDTH, WINDOW_HEIGHT)
         frame.setLocationByPlatform(true)
-        panel.append("Команды: ls, cd, vfs-init, exit. Для выполнения нажмите Enter.")
+        panel.append("Команды: ls, cd, echo, find, vfs-init, exit. Для выполнения нажмите Enter.")
         panel.append(config.debugDescription())
     }
 
@@ -75,7 +75,7 @@ class TerminalWindow(private val config: AppConfig = AppConfig()) {
     private fun loadVfs(): Boolean {
         return try {
             val session = VfsSession.load(config)
-            shell = Shell(session::initialize)
+            shell = Shell(session = session)
             display("Загружена ${config.vfsName}\n${session.fileSystem.describe()}")
             true
         } catch (error: IOException) {

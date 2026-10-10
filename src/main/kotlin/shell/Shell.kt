@@ -2,8 +2,13 @@ package shell
 
 import java.io.IOException
 
-/** Выполняет команды прототипа независимо от графического интерфейса. */
-class Shell(private val initializeVfs: (() -> String)? = null) {
+/** Выполняет команды эмулятора независимо от графического интерфейса. */
+class Shell(
+    private val initializeVfs: (() -> String)? = null,
+    private val session: VfsSession? = null,
+) {
+    private val navigation = session?.navigation ?: VfsNavigation { VirtualFileSystem() }
+
     @Volatile
     private var hadErrors = false
 
@@ -15,27 +20,29 @@ class Shell(private val initializeVfs: (() -> String)? = null) {
     /** Обрабатывает строку; ошибка команды не прекращает следующий ввод. */
     fun execute(line: String): CommandResult {
         val command = CommandParser.parse(line) ?: return CommandResult()
-        return when (command.name) {
-            "ls" -> stub(command)
-            "cd" -> changeDirectoryStub(command)
-            "exit" -> exit(command)
-            "vfs-init" -> initialize(command)
-            else -> failure("Неизвестная команда: ${command.name}")
+        return try {
+            dispatch(command)
+        } catch (error: IllegalArgumentException) {
+            failure("${command.name}: ${error.message}")
         }
     }
 
-    /** Выводит имя и все аргументы заглушки. */
-    private fun stub(command: Command): CommandResult {
-        val arguments = command.arguments.joinToString(", ", "[", "]")
-        return CommandResult("${command.name}: аргументы=$arguments")
+    /** Передаёт команду реализации, работающей с той же VFS и текущим каталогом. */
+    private fun dispatch(command: Command): CommandResult = when (command.name) {
+        "ls" -> CommandResult(ListCommand(navigation).execute(command.arguments))
+        "cd" -> changeDirectory(command.arguments)
+        "echo" -> CommandResult(command.arguments.joinToString(" "))
+        "find" -> CommandResult(FindCommand(navigation).execute(command.arguments))
+        "exit" -> exit(command)
+        "vfs-init" -> initialize(command)
+        else -> failure("Неизвестная команда: ${command.name}")
     }
 
-    /** Проверяет число аргументов cd, не меняя состояние файловой системы. */
-    private fun changeDirectoryStub(command: Command): CommandResult {
-        if (command.arguments.size > MAX_CD_ARGUMENTS) {
-            return failure("cd: ожидается не более одного аргумента")
-        }
-        return stub(command)
+    /** Проверяет число аргументов и меняет только виртуальный текущий каталог. */
+    private fun changeDirectory(arguments: List<String>): CommandResult {
+        val operands = CommandOptions.parse(arguments, "").operands
+        require(operands.size <= MAX_CD_ARGUMENTS) { "ожидается не более одного аргумента" }
+        return CommandResult(navigation.changeDirectory(operands.firstOrNull()))
     }
 
     /** Завершает работу только при вызове exit без аргументов. */
@@ -47,7 +54,8 @@ class Shell(private val initializeVfs: (() -> String)? = null) {
 
     /** Выполняет служебный сброс; ошибка записи не завершает приложение. */
     private fun initialize(command: Command): CommandResult {
-        val action = initializeVfs ?: return failure("VFS не загружена: vfs-init недоступна")
+        val action = initializeVfs ?: session?.let { it::initialize }
+            ?: return failure("VFS не загружена: vfs-init недоступна")
         if (command.arguments.isNotEmpty()) {
             return failure("vfs-init: аргументы не поддерживаются")
         }

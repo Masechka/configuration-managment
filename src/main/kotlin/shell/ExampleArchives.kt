@@ -23,6 +23,8 @@ object ExampleArchives {
             "home/student/projects/readme.txt" to "Три уровня каталогов.\n".toByteArray(),
             "home/student/profile.txt" to "Студент\n".toByteArray(),
             "root.txt" to "Корень\n".toByteArray(),
+            "home/student/.profile" to "Скрытый файл\n".toByteArray(),
+            ".hidden/secret.txt" to "Скрытый каталог\n".toByteArray(),
             "empty/" to byteArrayOf(),
         ))
         println("Примеры ZIP созданы: $directory")

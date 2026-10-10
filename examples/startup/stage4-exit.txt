@@ -1,0 +1,51 @@
+echo Этап 4: основные команды
+ls
+ls /
+ls root.txt
+ls /home /empty
+ls -a /
+ls -l /
+ls -R /
+ls -alR /home
+ls -- /root.txt
+cd /home/student
+ls
+cd projects
+ls .
+cd ..
+ls
+cd -
+ls
+cd ../../..
+ls
+cd
+cd -- /empty
+ls
+cd /
+echo
+echo Привет из виртуальной оболочки
+echo "кавычки" $HOME -n
+find
+find /home
+find /home /empty
+find /root.txt
+find / -name *.txt
+find / -type d
+find / -name *.txt -type f -print
+find /home -name [pr]*.txt
+find / -name no-match
+ls -z
+ls /missing
+cd /root.txt
+cd /missing/../home
+cd /root.txt/..
+cd /home /empty
+find /missing
+find / -name
+find / -type x
+find / -exec
+echo После ошибок команды продолжают выполняться
+cd /home/student/projects
+ls
+exit
+unknown-must-not-run

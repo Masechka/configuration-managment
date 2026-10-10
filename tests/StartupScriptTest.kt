@@ -10,21 +10,21 @@ class StartupScriptTest {
     /** Ошибка с номером строки не препятствует следующей команде. */
     @Test
     fun errorsAreReportedAndTheNextLineRuns() {
-        withScript("ls /first\nunknown\n\ncd /last\n") { path ->
+        withScript("echo /first\nunknown\n\necho /last\n") { path ->
             val output = mutableListOf<String>()
             StartupScript.run(path, Shell()::execute, output::add)
             val dialogue = output.joinToString("\n")
-            assertTrue(dialogue.contains("$ ls /first"))
+            assertTrue(dialogue.contains("$ echo /first"))
             assertTrue(dialogue.contains("Строка 2"))
             assertTrue(dialogue.contains("unknown"))
-            assertTrue(dialogue.contains("cd: аргументы=[/last]"))
+            assertTrue(dialogue.contains("$ echo /last\n/last"))
         }
     }
 
     /** exit завершает скрипт, неверная exit с аргументами — нет. */
     @Test
     fun onlyValidExitStopsRemainingLines() {
-        withScript("exit extra\nls /before\nexit\nls /after\n") { path ->
+        withScript("exit extra\necho /before\nexit\necho /after\n") { path ->
             val output = mutableListOf<String>()
             StartupScript.run(path, Shell()::execute, output::add)
             val dialogue = output.joinToString("\n")

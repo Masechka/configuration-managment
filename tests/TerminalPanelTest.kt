@@ -30,11 +30,11 @@ class TerminalPanelTest {
                 submitted = line
                 panel.append(Shell().execute(line).output)
             }
-            panel.input.text = "ls /home"
+            panel.input.text = "echo /home"
             panel.input.postActionEvent()
-            assertEquals("ls /home", submitted)
+            assertEquals("echo /home", submitted)
             assertEquals("", panel.input.text)
-            assertTrue(panel.history.text.contains("$ ls /home"))
+            assertTrue(panel.history.text.contains("$ echo /home"))
             assertTrue(panel.history.text.contains("/home"))
         }
     }

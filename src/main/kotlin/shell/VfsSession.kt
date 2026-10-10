@@ -12,10 +12,14 @@ class VfsSession private constructor(
     var fileSystem: VirtualFileSystem = fileSystem
         private set
 
+    /** Навигация всегда обращается к актуальному дереву этой сессии. */
+    val navigation = VfsNavigation { this.fileSystem }
+
     /** Сбрасывает ZIP и память; при ошибке записи прежнее дерево сохраняется. */
     fun initialize(): String {
         ZipVfs.reset(path)
         fileSystem = VirtualFileSystem()
+        navigation.reset()
         return "VFS сброшена: $path\n${fileSystem.describe()}"
     }
 

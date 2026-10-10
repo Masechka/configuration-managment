@@ -18,7 +18,7 @@ class WindowIntegrationTest {
     fun realWindowDisplaysVfsAndRunsCommands() {
         withArchive(mapOf("hello.txt" to "hello".toByteArray())) { path ->
             val script = path.parent.resolve("startup.txt")
-            Files.writeString(script, "unknown\nls /after-error\n")
+            Files.writeString(script, "unknown\necho /after-error\n")
             val frame = openWindow(AppConfig(path, script, true))
             try {
                 waitForInput(frame)
@@ -28,12 +28,13 @@ class WindowIntegrationTest {
                     assertTrue(panel.history.text.contains("/hello.txt"))
                     assertTrue(panel.history.text.contains("Строка 1"))
                     assertTrue(panel.history.text.contains("/after-error"))
-                    panel.input.text = "cd /home"
+                    panel.input.text = "find / -type f"
                     panel.input.postActionEvent()
                 }
                 waitForInput(frame)
                 SwingUtilities.invokeAndWait {
-                    assertTrue((frame.contentPane as TerminalPanel).history.text.contains("/home"))
+                    val text = (frame.contentPane as TerminalPanel).history.text
+                    assertTrue(text.contains("$ find / -type f\n/hello.txt"))
                     savePanelPreview(frame)
                 }
             } finally {
