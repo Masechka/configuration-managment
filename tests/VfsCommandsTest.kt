@@ -51,6 +51,41 @@ class VfsCommandsTest {
         assertTrue(shell.execute("exit").output.contains(Shell.EXIT_WARNING))
     }
 
+    /** Ошибочный cd сохраняет и текущий, и предыдущий каталог; cd - переключает их. */
+    @Test
+    fun failedNavigationPreservesPreviousDirectory() = withCommands { shell, _ ->
+        shell.execute("cd a")
+        shell.execute("cd nested")
+        listOf("cd /missing", "cd /root.txt", "cd /a /ab", "cd -x").forEach { command ->
+            assertTrue(shell.execute(command).error, command)
+            assertEquals("leaf.txt", shell.execute("ls").output)
+        }
+        assertEquals("/a", shell.execute("cd -").output)
+        assertEquals("/a/nested", shell.execute("cd -").output)
+        assertFalse(shell.execute("cd ////a//nested/.././").error)
+        assertEquals("file.txt\nnested", shell.execute("ls").output)
+        assertFalse(shell.execute("cd ../../../../").error)
+        assertEquals("a\nab\nroot.txt", shell.execute("ls").output)
+        assertEquals("/a", shell.execute("cd -").output)
+        assertFalse(shell.execute("cd --").error)
+        assertEquals("/a", shell.execute("cd -").output)
+    }
+
+    /** -- позволяет перейти в каталог с дефисом; аргументы после него остаются путями. */
+    @Test
+    fun navigateToDirectoryStartingWithDash() {
+        withArchive(mapOf("-folder/child/" to byteArrayOf(), "-folder/file" to byteArrayOf())) { path ->
+            val shell = Shell(session = VfsSession.load(AppConfig(path, explicitVfs = true)))
+            assertTrue(shell.execute("cd -folder").error)
+            assertFalse(shell.execute("cd -- -folder").error)
+            assertEquals("child\nfile", shell.execute("ls").output)
+            assertTrue(shell.execute("cd -- child extra").error)
+            assertEquals("/", shell.execute("cd -").output)
+            assertFalse(shell.execute("cd ./-folder/child/").error)
+            assertEquals("", shell.execute("ls").output)
+        }
+    }
+
     /** find рекурсивно ищет имена и типы, не захватывая соседний префикс /ab. */
     @Test
     fun searchByNameTypeAndMultipleRoots() = withCommands { shell, _ ->
