@@ -5,7 +5,9 @@ internal class ChownCommand(private val navigation: VfsNavigation) {
     /** Поддерживает owner[:group], :group, числовые IDs, -R, несколько путей и --. */
     fun execute(arguments: List<String>): String {
         val options = CommandOptions.parse(arguments, "R")
-        require(options.operands.size >= 2) { "chown: ожидаются владелец и хотя бы один путь" }
+        require(options.operands.size >= MIN_OPERAND_COUNT) {
+            "chown: ожидаются владелец и хотя бы один путь"
+        }
         val ownership = parseOwnership(options.operands.first())
         val paths = options.operands.drop(1).map(navigation::resolve)
         val fileSystem = navigation.fileSystem
@@ -19,7 +21,7 @@ internal class ChownCommand(private val navigation: VfsNavigation) {
     /** owner: задаёт группу с именем виртуального владельца; пропуски сохраняют прежнее поле. */
     private fun parseOwnership(text: String): OwnershipChange {
         val parts = text.split(':')
-        require(parts.size <= 2) { "chown: неверный формат owner[:group]" }
+        require(parts.size <= MAX_OWNERSHIP_PARTS) { "chown: неверный формат owner[:group]" }
         val owner = parts.first().ifEmpty { null }
         val group = if (parts.size == 1) null else parts.last().ifEmpty { owner }
         require(owner != null || group != null) { "chown: не задан владелец или группа" }
@@ -33,6 +35,8 @@ internal class ChownCommand(private val navigation: VfsNavigation) {
     private data class OwnershipChange(val owner: String?, val group: String?)
 
     private companion object {
+        const val MIN_OPERAND_COUNT = 2
+        const val MAX_OWNERSHIP_PARTS = 2
         val NAME = Regex("([0-9]+|[A-Za-z_][A-Za-z0-9_.-]*[$]?)")
     }
 }

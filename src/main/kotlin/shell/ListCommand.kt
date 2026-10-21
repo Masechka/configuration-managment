@@ -66,21 +66,30 @@ internal class ListCommand(private val navigation: VfsNavigation) {
 
     /** Округляет вверх: один знак для размеров меньше 10 единиц, далее целое число. */
     private fun humanReadableSize(bytes: Int): String {
-        if (bytes < 1024) return bytes.toString()
+        if (bytes < UNIT_BASE) return bytes.toString()
         val units = "BKMGTPE"
         var value = bytes.toDouble()
         var unit = 0
-        while (value >= 1024) {
-            value /= 1024
+        while (value >= UNIT_BASE) {
+            value /= UNIT_BASE
             unit++
         }
-        val precision = if (value < 10) 10 else 1
+        val precision = if (value < FRACTIONAL_SIZE_LIMIT) FRACTIONAL_SCALE else 1
         var rounded = ceil(value * precision) / precision
-        if (rounded >= 1024) {
+        if (rounded >= UNIT_BASE) {
             rounded = 1.0
             unit++
         }
-        return if (rounded < 10) String.format(Locale.ROOT, "%.1f%c", rounded, units[unit])
-            else "${rounded.toInt()}${units[unit]}"
+        return if (rounded < FRACTIONAL_SIZE_LIMIT) {
+            String.format(Locale.ROOT, "%.1f%c", rounded, units[unit])
+        } else {
+            "${rounded.toInt()}${units[unit]}"
+        }
+    }
+
+    private companion object {
+        const val UNIT_BASE = 1024
+        const val FRACTIONAL_SIZE_LIMIT = 10
+        const val FRACTIONAL_SCALE = 10
     }
 }

@@ -74,7 +74,10 @@ class VfsCommandsTest {
     /** -- позволяет перейти в каталог с дефисом; аргументы после него остаются путями. */
     @Test
     fun navigateToDirectoryStartingWithDash() {
-        withArchive(mapOf("-folder/child/" to byteArrayOf(), "-folder/file" to byteArrayOf())) { path ->
+        withArchive(mapOf(
+            "-folder/child/" to byteArrayOf(),
+            "-folder/file" to byteArrayOf(),
+        )) { path ->
             val shell = Shell(session = VfsSession.load(AppConfig(path, explicitVfs = true)))
             assertTrue(shell.execute("cd -folder").error)
             assertFalse(shell.execute("cd -- -folder").error)
