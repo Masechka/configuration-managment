@@ -52,8 +52,14 @@ class ListOptionsTest {
             withArchive(sizes.keys.associate { "size-$it" to ByteArray(it) }) { path ->
                 val shell = Shell(session = VfsSession.load(AppConfig(path, explicitVfs = true)))
                 sizes.forEach { (bytes, human) ->
-                    assertEquals("- root root $human size-$bytes", shell.execute("ls -lh size-$bytes").output)
-                    assertEquals("- root root $bytes size-$bytes", shell.execute("ls -l size-$bytes").output)
+                    assertEquals(
+                        "- root root $human size-$bytes",
+                        shell.execute("ls -lh size-$bytes").output,
+                    )
+                    assertEquals(
+                        "- root root $bytes size-$bytes",
+                        shell.execute("ls -l size-$bytes").output,
+                    )
                 }
             }
         } finally {
