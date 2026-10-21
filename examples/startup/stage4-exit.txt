@@ -5,8 +5,14 @@ ls root.txt
 ls /home /empty
 ls -a /
 ls -l /
+ls -h /
+ls -la /
+ls -lh /
+ls -ah /
+ls -lah /
+ls -l -h -a /
 ls -R /
-ls -alR /home
+ls -alhR /home
 ls -- /root.txt
 cd /home/student
 ls

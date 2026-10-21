@@ -1,12 +1,15 @@
 package shell
 
+import java.util.Locale
+import kotlin.math.ceil
+
 /** Перечисляет файлы VFS; рекурсия не затрагивает диск или скрытые поддеревья без -a. */
 internal class ListCommand(private val navigation: VfsNavigation) {
     private val fileSystem: VirtualFileSystem get() = navigation.fileSystem
 
-    /** Поддерживает файлы, каталоги, несколько путей, -a, -l, -R и --. */
+    /** Поддерживает файлы, каталоги, несколько путей, -a, -l, -h, -R и --. */
     fun execute(arguments: List<String>): String {
-        val options = CommandOptions.parse(arguments, "alR")
+        val options = CommandOptions.parse(arguments, "alhR")
         val paths = options.operands.ifEmpty { listOf(".") }.map(navigation::resolve)
         return paths.joinToString("\n\n") { path ->
             if (fileSystem.isDirectory(path)) {
@@ -51,10 +54,32 @@ internal class ListCommand(private val navigation: VfsNavigation) {
         return listOf(format(path, ".", options), format(parent, "..", options))
     }
 
-    /** Длинный формат: тип, виртуальный владелец, группа, размер в байтах и имя. */
+    /** Длинный формат: тип, владелец, группа, размер (с -h в степенях 1024) и имя. */
     private fun format(path: String, name: String, options: CommandOptions): String {
         if ('l' !in options.flags) return name
         val type = if (fileSystem.isDirectory(path)) "d" else "-"
-        return "$type root root ${fileSystem.size(path)} $name"
+        val bytes = fileSystem.size(path)
+        val size = if ('h' in options.flags) humanReadableSize(bytes) else bytes.toString()
+        return "$type root root $size $name"
+    }
+
+    /** Округляет вверх: один знак для размеров меньше 10 единиц, далее целое число. */
+    private fun humanReadableSize(bytes: Int): String {
+        if (bytes < 1024) return bytes.toString()
+        val units = "BKMGTPE"
+        var value = bytes.toDouble()
+        var unit = 0
+        while (value >= 1024) {
+            value /= 1024
+            unit++
+        }
+        val precision = if (value < 10) 10 else 1
+        var rounded = ceil(value * precision) / precision
+        if (rounded >= 1024) {
+            rounded = 1.0
+            unit++
+        }
+        return if (rounded < 10) String.format(Locale.ROOT, "%.1f%c", rounded, units[unit])
+            else "${rounded.toInt()}${units[unit]}"
     }
 }
