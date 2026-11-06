@@ -1,7 +1,6 @@
 .gradle/
 .kotlin/
 .tools/
-.superpowers/
 build/
 out/
 .idea/
@@ -10,8 +9,13 @@ out/
 *.class
 *.jar
 *.zip
+*.nupkg
 *.tar
 *.gz
 *.pdf
 .DS_Store
 /docs/
+local.properties
+gradle/
+gradlew
+gradlew.bat

@@ -1,8 +1,0 @@
-ls
-cd /home
-unknown
-ls /after-error
-vfs-init extra
-vfs-init
-exit
-ls /should-not-run

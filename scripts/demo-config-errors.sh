@@ -1,18 +1,22 @@
 #!/bin/sh
 set -eu
 project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-cd "$project_dir"
-./scripts/prepare-examples.sh
-app=./build/install/vfs-shell/bin/vfs-shell
-expect_error() {
-    if "$app" "$@"; then
-        printf '%s\n' 'Ожидалась ошибка параметров' >&2
-        exit 1
-    fi
+"$project_dir/scripts/gradle.sh" --quiet installDist
+app="$project_dir/build/install/nuget-graph/bin/nuget-graph"
+check_error() {
+    set +e
+    "$app" "$@"
+    result=$?
+    set -e
+    [ "$result" -eq 2 ] || exit 1
 }
-expect_error --vfs build/examples/minimal.zip --startup
-expect_error --vfs
-expect_error --unknown x
-expect_error --vfs a.zip --vfs b.zip --startup examples/startup/stage2.txt
-printf '%s\n' 'Ошибки параметров обработаны. Проверка отсутствующего стартового скрипта:'
-./run.sh --vfs build/examples/minimal.zip --startup build/missing-startup.txt
+check_error --package bad/name
+check_error --package A --repository ftp://host/index.json
+check_error --package A --test-mode yes
+check_error --package A --ascii yes
+check_error --package A --max-depth -1
+check_error --package A --test-mode true --repository /missing/graph.txt
+check_error --package A --unknown value
+check_error --package A --package B
+check_error --package
+printf '%s\n' 'Все ошибки параметров обработаны с кодом 2.'

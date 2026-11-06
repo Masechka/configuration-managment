@@ -1,1 +1,1 @@
-rootProject.name = "vfs-shell"
+rootProject.name = "nuget-graph"
